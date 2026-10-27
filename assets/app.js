@@ -362,6 +362,86 @@
   if (page === 'samples') initSamples();
   if (page === 'works') initWorks();
   if (page === 'catalog') initCatalog();
-  if (page === 'product') initProduct();
+
+  // Примерка: модель рисуется поверх фото покупателя. Фото не покидает устройство.
+  function paintCurtain(c, x, y, w, h, o) {
+    var half = w * (1 - o.gap) / 2, panels = o.pair ? [[x, half], [x + w - half, half]] : [[x, w]];
+    panels.forEach(function (pn) {
+      var px = pn[0], pw = pn[1];
+      if (pw < 2) return;
+      c.save(); c.beginPath(); c.rect(px, y, pw, h); c.clip(); c.globalAlpha = o.alpha;
+      c.fillStyle = o.hex; c.fillRect(px, y, pw, h);
+      var n = Math.max(2, Math.round(pw / Math.max(14, Math.min(60, pw / 7)))), g = c.createLinearGradient(px, 0, px + pw, 0);
+      for (var i = 0; i <= n; i++) {
+        g.addColorStop(i / n, 'rgba(0,0,0,' + (o.sheer ? 0.08 : 0.3) + ')');
+        if (i < n) g.addColorStop((i + 0.5) / n, 'rgba(255,255,255,' + (o.sheer ? 0.4 : 0.12) + ')');
+      }
+      c.fillStyle = g; c.fillRect(px, y, pw, h);
+      if (o.marble) {
+        var seed = 7 + Math.round(pw), rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+        c.strokeStyle = 'rgba(230,226,220,0.3)'; c.lineWidth = Math.max(1, pw / 300);
+        for (var k = 0; k < 6 + Math.round(pw * h / 12000); k++) {
+          var vx = px + rnd() * pw, vy = y + rnd() * h; c.beginPath(); c.moveTo(vx, vy);
+          for (var m = 0; m < 4; m++) { vx += (rnd() - 0.5) * pw * 0.35; vy += rnd() * h * 0.12; c.lineTo(vx, vy); }
+          c.stroke();
+        }
+      }
+      var tape = Math.max(3, h * 0.022), hem = Math.max(2, h * 0.012);
+      c.fillStyle = 'rgba(0,0,0,0.12)'; c.fillRect(px, y, pw, tape);
+      c.fillStyle = o.sheer ? 'rgba(140,140,140,0.35)' : 'rgba(0,0,0,0.18)'; c.fillRect(px, y + h - hem, pw, hem);
+      c.restore();
+    });
+  }
+
+  function initTryon() {
+    var box = byId('tryon-box'), stage = byId('tryon-stage'), photo = byId('tryon-photo'), ov = byId('tryon-ov'), cv = byId('tryon-cv');
+    if (!box) return;
+    var p = JSON.parse(byId('product').textContent), form = byId('pform'), gap = byId('tryon-gap'), op = byId('tryon-op');
+    var sheer = p.type === 'tyul', pos = { x: 0.15, y: 0.06, w: 0.7, h: 0.86 }, url = null;
+    if (!p.pair) byId('tryon-gap-l').hidden = true;
+    op.value = sheer ? 70 : 100;
+    function opts() {
+      var code = (form.querySelector('input[name="color"]:checked') || {}).value || p.colors[0].code;
+      return { hex: colorOf(code).hex, sheer: sheer, pair: p.pair, marble: p.fabric === 'marble', gap: gap.value / 100, alpha: op.value / 100 };
+    }
+    function render() {
+      ov.style.left = pos.x * 100 + '%'; ov.style.top = pos.y * 100 + '%'; ov.style.width = pos.w * 100 + '%'; ov.style.height = pos.h * 100 + '%';
+      var r = stage.getBoundingClientRect(), w = Math.max(1, r.width * pos.w), h = Math.max(1, r.height * pos.h), d = window.devicePixelRatio || 1;
+      cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+      var c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h); paintCurtain(c, 0, 0, w, h, opts());
+    }
+    function load(file) {
+      if (!file) return;
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(file); photo.onload = function () { box.hidden = false; render(); box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }; photo.src = url;
+    }
+    ['tryon-file', 'tryon-file2'].forEach(function (id) { byId(id).addEventListener('change', function () { load(this.files[0]); this.value = ''; }); });
+    var drag = null;
+    function down(e, mode) {
+      e.preventDefault(); e.stopPropagation();
+      var r = stage.getBoundingClientRect(); drag = { mode: mode, sx: e.clientX, sy: e.clientY, p: { x: pos.x, y: pos.y, w: pos.w, h: pos.h }, W: r.width, H: r.height };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    }
+    function move(e) {
+      if (!drag) return;
+      var dx = (e.clientX - drag.sx) / drag.W, dy = (e.clientY - drag.sy) / drag.H, q = drag.p;
+      if (drag.mode === 'move') { pos.x = Math.min(0.95, Math.max(-q.w + 0.05, q.x + dx)); pos.y = Math.min(0.95, Math.max(-q.h + 0.05, q.y + dy)); }
+      else { pos.w = Math.max(0.05, q.w + dx); pos.h = Math.max(0.05, q.h + dy); }
+      render();
+    }
+    function up() { drag = null; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    ov.addEventListener('pointerdown', function (e) { down(e, 'move'); });
+    byId('tryon-rs').addEventListener('pointerdown', function (e) { down(e, 'size'); });
+    [gap, op].forEach(function (el) { el.addEventListener('input', render); });
+    form.addEventListener('change', function () { if (!box.hidden) render(); });
+    window.addEventListener('resize', function () { if (!box.hidden) render(); });
+    byId('tryon-save').addEventListener('click', function () {
+      var k = Math.min(1, 2000 / Math.max(photo.naturalWidth, photo.naturalHeight)), W = Math.round(photo.naturalWidth * k), H = Math.round(photo.naturalHeight * k);
+      var out = document.createElement('canvas'); out.width = W; out.height = H;
+      var c = out.getContext('2d'); c.drawImage(photo, 0, 0, W, H); paintCurtain(c, pos.x * W, pos.y * H, pos.w * W, pos.h * H, opts());
+      out.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'primerka-retosh-' + p.slug + '.jpg'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/jpeg', 0.9);
+    });
+  }
+  if (page === 'product') { initProduct(); initTryon(); }
   if (page === 'poshiv') initPoshiv();
 })();
