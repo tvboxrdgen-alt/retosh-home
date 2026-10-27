@@ -327,7 +327,7 @@
       byId('r-shade').textContent = (!r.lined && fabric.shadeText) ? fabric.shadeText : r.shade + '%';
       byId('r-total').textContent = fmt(r.total) + ' ₽';
       var warn = byId('r-warn'); warn.hidden = !r.overRoll;
-      warn.textContent = 'Высота больше, чем позволяет рулон этой ткани (' + fabric.roll + ' см вместе с подгибкой). Понадобится горизонтальный шов или другая ткань. Мастер предложит вариант.';
+      warn.textContent = 'Из этой ткани без шва можно сшить изделие высотой до ' + (fabric.roll - 15) + ' см. Понадобится горизонтальный шов или другая ткань. Мастер предложит вариант.';
       lastItem = { price: r.total, lines: [summary, 'Карниз ' + cornice + ' см, высота до пола ' + height + ' см (' + drop.name.toLowerCase() + ')', 'Готовая высота ' + String(r.finH).replace('.', ',') + ' см, ткани ' + String(r.meters).replace('.', ',') + ' м' + (r.grom ? ', люверсов ' + r.grom + ' на полотно' : '')] };
       lastText = 'Здравствуйте! Расчёт пошива с сайта RETOSH HOME:\n' + summary + '\nШирина карниза: ' + cornice + ' см\nВысота до пола: ' + height + ' см (' + drop.name.toLowerCase() + ')\nГотовая высота: ' + String(r.finH).replace('.', ',') + ' см\nТкани: ' + String(r.meters).replace('.', ',') + ' м' + (r.grom ? '\nЛюверсов на полотно: ' + r.grom : '') + '\nОриентировочная цена: ' + fmt(r.total) + ' ₽';
       // рисунок шторы
