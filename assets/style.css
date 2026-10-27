@@ -411,3 +411,5 @@ p{margin:0}
 .s-glass{fill:#e6eef1} .s-rod{fill:var(--gold-soft)} .s-cur{fill:#d8c5be} .s-fold{stroke:#eadfd9;stroke-width:3}
 .s-dim{stroke:var(--wine);stroke-width:1.5;fill:none} .s-dim-h{fill:var(--wine)}
 .s-lab{fill:var(--ink);font:600 13px var(--f-body)} .s-sub{fill:var(--muted);font:12px var(--f-body)}
+
+.gal-note{margin:8px 0 0;font-size:14px;color:var(--muted,#6b6461)}

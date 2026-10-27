@@ -197,7 +197,13 @@
     var p = JSON.parse(byId('product').textContent);
     var main = byId('gal-main'), thumbs = byId('thumbs'), price = byId('price'), colorName = byId('color-name');
     var form = byId('pform'), custom = byId('custom-link');
-    function photosFor(code) { for (var i = 0; i < p.colors.length; i++) if (p.colors[i].code === code) return p.colors[i].photos; return p.colors[0].photos; }
+    var galNote = byId('gal-note');
+    function photosFor(code) {
+      for (var i = 0; i < p.colors.length; i++) if (p.colors[i].code === code && p.colors[i].photos.length) { galNote.hidden = true; return p.colors[i].photos; }
+      galNote.hidden = false;
+      galNote.textContent = 'Фото в цвете «' + colorOf(code).name + '» скоро добавим. Пока показан цвет «' + colorOf(p.colors[0].code).name + '».';
+      return p.colors[0].photos;
+    }
     function showPhoto(key) {
       main.src = B + '/img/' + key + '-l.jpg';
       [].slice.call(thumbs.querySelectorAll('button')).forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.key === key ? 'true' : 'false'); });
