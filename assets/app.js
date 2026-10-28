@@ -393,16 +393,35 @@
     });
   }
 
-  function initTryon() {
+  // src: откуда брать модель и цвет — карточка товара или выбор в каталоге.
+  function productTryonSource() {
+    var p = JSON.parse(byId('product').textContent), form = byId('pform');
+    return { form: form, product: function () { return p; }, code: function () { return (form.querySelector('input[name="color"]:checked') || {}).value; } };
+  }
+  function catalogTryonSource() {
+    var list = JSON.parse(byId('products').textContent), form = byId('tryon-pickform'), colors = byId('tryon-colors'), link = byId('tryon-link');
+    byId('tryon-models').innerHTML = list.map(function (p, i) {
+      return '<label class="tm"><input type="radio" name="tmodel" value="' + p.slug + '"' + (i ? '' : ' checked') + '><img src="' + B + '/img/' + p.colors[0].photos[0] + '-m.jpg" alt="" loading="lazy" width="720" height="900"><span>' + esc(p.name) + '</span></label>';
+    }).join('');
+    function cur() { var s = (form.querySelector('input[name="tmodel"]:checked') || {}).value; for (var i = 0; i < list.length; i++) if (list[i].slug === s) return list[i]; return list[0]; }
+    function fillColors() {
+      var p = cur();
+      colors.innerHTML = p.colors.map(function (c, i) { var col = colorOf(c.code), t = esc(c.code + ' ' + col.name); return '<label title="' + t + '"><input type="radio" name="tcolor" value="' + c.code + '"' + (i ? '' : ' checked') + ' aria-label="' + t + '"><i style="--c:' + col.hex + '"></i></label>'; }).join('');
+      link.href = B + '/katalog/' + p.slug + '/';
+    }
+    fillColors();
+    return { form: form, product: cur, code: function () { return (form.querySelector('input[name="tcolor"]:checked') || {}).value; },
+             onChange: function (e, setProduct) { if (e.target.name === 'tmodel') { fillColors(); setProduct(); } } };
+  }
+
+  function initTryon(src) {
     var box = byId('tryon-box'), stage = byId('tryon-stage'), photo = byId('tryon-photo'), ov = byId('tryon-ov'), cv = byId('tryon-cv');
-    if (!box) return;
-    var p = JSON.parse(byId('product').textContent), form = byId('pform'), gap = byId('tryon-gap'), op = byId('tryon-op');
-    var sheer = p.type === 'tyul', pos = { x: 0.15, y: 0.06, w: 0.7, h: 0.86 }, url = null;
-    if (!p.pair) byId('tryon-gap-l').hidden = true;
-    op.value = sheer ? 70 : 100;
+    var gap = byId('tryon-gap'), op = byId('tryon-op'), pos = { x: 0.15, y: 0.06, w: 0.7, h: 0.86 }, url = null;
+    function setProduct() { var p = src.product(); byId('tryon-gap-l').hidden = !p.pair; op.value = p.type === 'tyul' ? 70 : 100; }
+    setProduct();
     function opts() {
-      var code = (form.querySelector('input[name="color"]:checked') || {}).value || p.colors[0].code;
-      return { hex: colorOf(code).hex, sheer: sheer, pair: p.pair, marble: p.fabric === 'marble', gap: gap.value / 100, alpha: op.value / 100 };
+      var p = src.product(), code = src.code() || p.colors[0].code;
+      return { hex: colorOf(code).hex, sheer: p.type === 'tyul', pair: p.pair, marble: p.fabric === 'marble', gap: gap.value / 100, alpha: op.value / 100 };
     }
     function render() {
       ov.style.left = pos.x * 100 + '%'; ov.style.top = pos.y * 100 + '%'; ov.style.width = pos.w * 100 + '%'; ov.style.height = pos.h * 100 + '%';
@@ -433,15 +452,16 @@
     ov.addEventListener('pointerdown', function (e) { down(e, 'move'); });
     byId('tryon-rs').addEventListener('pointerdown', function (e) { down(e, 'size'); });
     [gap, op].forEach(function (el) { el.addEventListener('input', render); });
-    form.addEventListener('change', function () { if (!box.hidden) render(); });
+    src.form.addEventListener('change', function (e) { if (src.onChange) src.onChange(e, setProduct); if (!box.hidden) render(); });
     window.addEventListener('resize', function () { if (!box.hidden) render(); });
     byId('tryon-save').addEventListener('click', function () {
       var k = Math.min(1, 2000 / Math.max(photo.naturalWidth, photo.naturalHeight)), W = Math.round(photo.naturalWidth * k), H = Math.round(photo.naturalHeight * k);
       var out = document.createElement('canvas'); out.width = W; out.height = H;
       var c = out.getContext('2d'); c.drawImage(photo, 0, 0, W, H); paintCurtain(c, pos.x * W, pos.y * H, pos.w * W, pos.h * H, opts());
-      out.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'primerka-retosh-' + p.slug + '.jpg'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/jpeg', 0.9);
+      out.toBlob(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'primerka-retosh-' + src.product().slug + '.jpg'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }, 'image/jpeg', 0.9);
     });
   }
-  if (page === 'product') { initProduct(); initTryon(); }
+  if (page === 'product') { initProduct(); if (byId('tryon-box')) initTryon(productTryonSource()); }
+  if (page === 'catalog' && byId('tryon-box')) initTryon(catalogTryonSource());
   if (page === 'poshiv') initPoshiv();
 })();

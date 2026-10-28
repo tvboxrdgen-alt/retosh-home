@@ -425,3 +425,10 @@ p{margin:0}
 .tryon-tip{font-size:13px;margin:0}
 .tryon-ctl{display:flex;flex-wrap:wrap;gap:18px}.tryon-ctl label{display:grid;gap:4px;font-size:14px}.tryon-ctl label[hidden]{display:none}
 .tryon-btns{display:flex;flex-wrap:wrap;gap:10px}
+.tryon-cat{margin-bottom:8px}.tryon-cat .tryon-box{max-width:760px}
+.tryon-pickform{display:grid;gap:12px}.tryon-pickform fieldset{min-width:0;border:0;padding:0;margin:0;display:grid;gap:8px}.tryon-pickform legend{font-weight:600;font-size:14px;padding:0;margin-bottom:6px}
+.tryon-models{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.tm{position:relative;flex:0 0 112px;display:grid;gap:4px;font-size:12px;line-height:1.3;cursor:pointer}
+.tm input{position:absolute;opacity:0;width:1px;height:1px}
+.tm img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:8px;border:2px solid transparent}
+.tm input:checked+img{border-color:#5a1e26}.tm input:focus-visible+img{outline:2px solid #cba364}
